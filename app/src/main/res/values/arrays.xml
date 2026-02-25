@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="default_allowed_packages">
+        <item>com.android.chrome</item>
+    </string-array>
+</resources>

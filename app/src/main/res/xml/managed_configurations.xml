@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <restriction
+        android:key="allowed_packages_csv"
+        android:title="Allowed packages (CSV)"
+        android:description="@string/mc_desc_allowed_packages"
+        android:restrictionType="string"
+        android:defaultValue="@string/default_allowed_packages_csv" />
+
+    <restriction
+        android:key="allow_system_ui"
+        android:title="Allow system UI features"
+        android:description="@string/mc_desc_allow_system_ui"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+
+    <restriction
+        android:key="admin_mode_enabled"
+        android:title="Admin mode"
+        android:description="@string/mc_desc_admin_mode"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+
+    <restriction
+        android:key="pin_required"
+        android:title="PIN required"
+        android:description="@string/mc_desc_pin_required"
+        android:restrictionType="bool"
+        android:defaultValue="true" />
+
+    <restriction
+        android:key="user_pin"
+        android:title="User PIN"
+        android:description="@string/mc_desc_user_pin"
+        android:restrictionType="string"
+        android:defaultValue="@string/default_user_pin" />
+
+    <restriction
+        android:key="admin_pin"
+        android:title="Admin PIN"
+        android:description="@string/mc_desc_admin_pin"
+        android:restrictionType="string"
+        android:defaultValue="@string/default_admin_pin" />
+
+</restrictions>

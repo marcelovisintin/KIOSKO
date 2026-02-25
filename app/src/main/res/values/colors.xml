@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kiosko_bg">#0F141A</color>
+    <color name="kiosko_bg_top">#1A2835</color>
+    <color name="kiosko_surface">#16212B</color>
+    <color name="kiosko_card">#1E2B37</color>
+    <color name="kiosko_card_stroke">#2A3A48</color>
+    <color name="kiosko_primary">#2F8FE8</color>
+    <color name="kiosko_on_primary">#FFFFFF</color>
+    <color name="kiosko_text">#F2F5F8</color>
+    <color name="kiosko_muted">#9CAABA</color>
+    <color name="kiosko_success">#2FA865</color>
+    <color name="kiosko_warning">#E5A12B</color>
+    <color name="kiosko_error">#D75A5A</color>
+</resources>

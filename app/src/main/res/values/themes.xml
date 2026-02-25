@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Kiosko" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/kiosko_primary</item>
+        <item name="colorOnPrimary">@color/kiosko_on_primary</item>
+        <item name="colorSurface">@color/kiosko_surface</item>
+        <item name="android:colorBackground">@color/kiosko_bg</item>
+        <item name="android:statusBarColor">@color/kiosko_bg</item>
+        <item name="android:navigationBarColor">@color/kiosko_bg</item>
+        <item name="android:windowBackground">@drawable/bg_kiosk_gradient</item>
+        <item name="android:textColorPrimary">@color/kiosko_text</item>
+        <item name="android:textColorSecondary">@color/kiosko_muted</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="q">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+    </style>
+</resources>
