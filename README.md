@@ -127,8 +127,7 @@ La app valida URLs `http/https` y las abre dentro de un contenedor WebView propi
 
 ## Notas config tablet
 
--en sistema-avanzado-informacion tablet-numero de compilacion " picar 7 veces para entrar en modo opciones para desarrollador"
-
--en opciones desarrollador- activar depuracion USB
--en opciones desarrollador- configuracion de USB predeterminada- activar trasnferencia de archivos.
--tablet conectada por cable a pc. ir en pc a administrador de dispositivos eliminar la tablet y luego en la pestaña accion buscar cambios en hardware.
+- En `Sistema > Avanzado > Informacion de la tablet > Numero de compilacion`, tocar 7 veces para habilitar las opciones de desarrollador.
+- En `Opciones de desarrollador`, activar `Depuracion USB`.
+- En `Opciones de desarrollador`, configurar `USB predeterminado` en `Transferencia de archivos`.
+- Con la tablet conectada por cable a la PC, si no aparece correctamente, abrir el Administrador de dispositivos, quitar la tablet y luego usar `Buscar cambios de hardware`.

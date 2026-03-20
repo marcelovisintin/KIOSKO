@@ -7,7 +7,9 @@ Ultima actualizacion: 2026-03-20
 - Se reviso el repo completo para entender el estado actual del proyecto.
 - La app compila correctamente con `.\gradlew.bat assembleDebug`.
 - Se actualizo `README.md` para reflejar el build real y el uso del contenedor web interno.
-- Quedaron cambios locales sin commit relacionados con WebView, politicas de kiosko y documentacion.
+- Los cambios de esta etapa ya fueron commiteados y subidos a GitHub.
+- El repo local quedo limpio y sincronizado con `origin/main`.
+- Ultimo commit guardado: `6e3142f feat: add internal kiosk web view and refresh docs`.
 
 ## Lo que estamos haciendo
 
@@ -16,7 +18,7 @@ Estamos dejando la app kiosko lista para una validacion funcional mas seria en t
 - Relevamos la arquitectura y los puntos de entrada principales.
 - Confirmamos que el proyecto ya tiene wrapper de Gradle y que el build debug funciona.
 - Revisamos los cambios locales para entender que se agrego antes de seguir desarrollando.
-- Ordenamos la documentacion para poder retomar rapido en otra sesion.
+- Ordenamos documentacion, gitignore, commit y push para poder retomar rapido en otra sesion.
 
 ## Estado funcional actual
 
@@ -43,6 +45,7 @@ Estamos dejando la app kiosko lista para una validacion funcional mas seria en t
 - Build OK con `.\gradlew.bat assembleDebug`.
 - `README.md` tenia una instruccion vieja sobre `gradle wrapper`; ya se ajusto.
 - `CONTINUAR.md` anterior estaba desactualizado: decia que no habia wrapper, que no se habia compilado y que no existia WebView interno.
+- Commit y push a GitHub realizados correctamente.
 
 ## Pendientes recomendados
 
@@ -59,7 +62,7 @@ Estamos dejando la app kiosko lista para una validacion funcional mas seria en t
    - JavaScript habilitado en WebView
    - credenciales/PIN por defecto
    - ausencia de tests automatizados
-5. Cuando el flujo quede estable, ordenar commit de los cambios locales.
+5. Definir el siguiente bloque de trabajo despues de las pruebas en hardware real.
 
 ## Comandos utiles
 
