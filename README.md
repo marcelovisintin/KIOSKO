@@ -17,6 +17,7 @@ App Android de tipo kiosco para tablets empresariales. Implementa:
 ## Arquitectura
 
 - `MainActivity`: login, launcher kiosco, panel admin y permisos por usuario.
+- `KioskWebActivity`: contenedor web interno para URLs permitidas.
 - `KioskDeviceAdminReceiver`: receiver de administracion del dispositivo.
 - `KioskPolicyController`: aplica lock task y hardening.
 - `KioskConfigProvider`: lee allowlist desde AppConfig y defaults locales.
@@ -58,11 +59,13 @@ Proyecto Android con Kotlin + ViewBinding.
 - `targetSdk`: 35
 
 Compilar desde Android Studio (recomendado).
-Si deseas compilar por CLI, primero genera wrapper y luego arma el APK:
+El wrapper de Gradle ya esta incluido en el repo y `assembleDebug` fue validado en esta revision.
+Si deseas compilar por CLI:
 
 ```bash
-gradle wrapper
 ./gradlew assembleDebug
+# Windows PowerShell / CMD
+.\gradlew.bat assembleDebug
 ```
 
 ## Managed Configurations (EMM)
@@ -111,11 +114,10 @@ Desde sesion `ADMIN` puedes:
 
 - Cargar una URL con nombre visible (`Nombre + URL`) usando `Agregar URL`.
 - Ver las URLs cargadas debajo del boton `Agregar URL`.
+- Eliminar URLs cargadas desde el mismo panel admin.
 - Asignar/desasignar cada URL al usuario seleccionado en el spinner.
 
-La app valida URLs `http/https` y agrega una URL de ejemplo por defecto:
-
-- `Odoo Schneider` -> `https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F`
+La app valida URLs `http/https` y las abre dentro de un contenedor WebView propio.
 
 ## Notas operativas
 

@@ -2,10 +2,8 @@ package com.schneider.kiosko
 
 import android.animation.ObjectAnimator
 import android.app.ActivityManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -28,6 +26,12 @@ class MainActivity : AppCompatActivity() {
         private const val ADMIN_USERNAME = "kadmin"
     }
 
+    private data class PolicySignature(
+        val allowedPackages: Set<String>,
+        val allowSystemUi: Boolean,
+        val adminModeEnabled: Boolean,
+    )
+
     private enum class SessionState {
         LOCKED,
         USER,
@@ -43,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         adminModeEnabled = false,
         pinRequired = true,
         userPin = "1234",
-        adminPin = "0000",
+        adminPin = "2026",
     )
     private var sessionState: SessionState = SessionState.LOCKED
     private val pinBuffer = StringBuilder(4)
@@ -54,6 +58,8 @@ class MainActivity : AppCompatActivity() {
     private var selectedAdminUserId: String? = null
     private var isUpdatingUserSpinner = false
     private var effectivePolicyPackages: Set<String> = emptySet()
+    private var lastPolicySignature: PolicySignature? = null
+    private var lastPolicyResult: PolicyApplyResult = PolicyApplyResult.DeviceOwnerMissing
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +83,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configureInteractions() {
-        binding.applyPoliciesButton.setOnClickListener { refreshState() }
+        binding.applyPoliciesButton.setOnClickListener { refreshState(forcePolicyApply = true) }
         binding.userSwitchAccountButton.setOnClickListener {
             currentUserId = null
             sessionState = if (config.pinRequired) SessionState.LOCKED else SessionState.USER
@@ -86,15 +92,7 @@ class MainActivity : AppCompatActivity() {
             renderSession()
             refreshState()
         }
-        binding.adminApplyPoliciesButton.setOnClickListener { refreshState() }
-        binding.adminOpenLauncherButton.setOnClickListener {
-            if (currentUserId == null) {
-                currentUserId = selectedAdminUserId ?: userProfiles.firstOrNull()?.id
-            }
-            sessionState = SessionState.USER
-            renderSession()
-            refreshState()
-        }
+        binding.adminApplyPoliciesButton.setOnClickListener { refreshState(forcePolicyApply = true) }
         binding.adminLogoutButton.setOnClickListener {
             currentUserId = null
             sessionState = if (config.pinRequired) SessionState.LOCKED else SessionState.USER
@@ -128,11 +126,7 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (sessionState == SessionState.ADMIN) {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
-                }
+                // Bloqueado en kiosko: salida solo por "Salir de kiosko".
             }
         })
     }
@@ -166,7 +160,7 @@ class MainActivity : AppCompatActivity() {
         button.strokeWidth = (2f * resources.displayMetrics.density).toInt()
     }
 
-    private fun refreshState() {
+    private fun refreshState(forcePolicyApply: Boolean = false) {
         config = KioskConfigProvider.load(this)
         userProfiles = KioskUserStore.load(this, config)
         webLinks = KioskWebLinkStore.load(this)
@@ -175,23 +169,29 @@ class MainActivity : AppCompatActivity() {
 
         effectivePolicyPackages = buildEffectivePolicyPackages()
         val policyConfig = config.copy(allowedPackages = effectivePolicyPackages)
-        val result = policyController.apply(policyConfig)
+        val currentSignature = PolicySignature(
+            allowedPackages = policyConfig.allowedPackages,
+            allowSystemUi = policyConfig.allowSystemUi,
+            adminModeEnabled = policyConfig.adminModeEnabled,
+        )
+        val shouldApplyPolicy = forcePolicyApply || currentSignature != lastPolicySignature
 
-        val launcherAllowedPackages = when (sessionState) {
-            SessionState.USER -> currentUserProfile()?.allowedPackages.orEmpty()
-            SessionState.LOCKED, SessionState.ADMIN -> effectivePolicyPackages
+        if (!policyController.isDeviceOwner()) {
+            lastPolicySignature = null
+            lastPolicyResult = PolicyApplyResult.DeviceOwnerMissing
+        } else if (shouldApplyPolicy) {
+            lastPolicyResult = policyController.apply(policyConfig)
+            lastPolicySignature = currentSignature
         }
-        val allowedApps = loadAllowedApps(launcherAllowedPackages)
-        adapter.submitList(allowedApps)
-        binding.emptyText.visibility = if (allowedApps.isEmpty()) View.VISIBLE else View.GONE
 
-        renderStatus(result)
+        val appCount = renderAllowedAppsForCurrentSession()
+
+        renderStatus(lastPolicyResult)
         renderHeaderMeta()
-        renderBottomInfo(allowedApps.size)
-        renderAdminPanel(result)
+        renderBottomInfo(appCount)
+        renderAdminPanel(lastPolicyResult)
         renderSession()
 
-        maybeExitLockTaskForAdmin()
         maybeEnterLockTask()
     }
 
@@ -258,6 +258,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderBottomInfo(appCount: Int) {
         binding.bottomInfoText.text = getString(R.string.bottom_info, appCount)
+    }
+
+    private fun renderAllowedAppsForCurrentSession(): Int {
+        val launcherAllowedPackages = when (sessionState) {
+            SessionState.USER -> currentUserProfile()?.allowedPackages.orEmpty()
+            SessionState.LOCKED, SessionState.ADMIN -> effectivePolicyPackages
+        }
+
+        val allowedApps = loadAllowedApps(launcherAllowedPackages)
+        adapter.submitList(allowedApps)
+        binding.emptyText.visibility = if (allowedApps.isEmpty()) View.VISIBLE else View.GONE
+        return allowedApps.size
     }
 
     private fun renderAdminPanel(result: PolicyApplyResult) {
@@ -440,16 +452,45 @@ class MainActivity : AppCompatActivity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(8), dp(6), dp(8), dp(6))
-            addView(
-                MaterialCheckBox(this@MainActivity).apply {
-                    text = link.name
-                    setTextColor(ContextCompat.getColor(this@MainActivity, R.color.kiosko_text))
-                    isChecked = isAssigned
-                    setOnCheckedChangeListener { _, checked ->
-                        updateUserPermission(userId, link.permissionKey, checked)
-                    }
-                },
+
+            val topRow = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
+            }
+
+            val check = MaterialCheckBox(this@MainActivity).apply {
+                text = link.name
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.kiosko_text))
+                isChecked = isAssigned
+                setOnCheckedChangeListener { _, checked ->
+                    updateUserPermission(userId, link.permissionKey, checked)
+                }
+            }
+
+            val deleteButton = MaterialButton(
+                this@MainActivity,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
+                text = getString(R.string.admin_delete_web_link)
+                isAllCaps = false
+                setOnClickListener { deleteWebLink(link.id) }
+            }
+
+            topRow.addView(
+                check,
+                LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f,
+                ),
             )
+            topRow.addView(deleteButton)
+
+            addView(topRow)
             addView(
                 TextView(this@MainActivity).apply {
                     text = link.url
@@ -459,6 +500,32 @@ class MainActivity : AppCompatActivity() {
                 },
             )
         }
+    }
+
+    private fun deleteWebLink(linkId: String) {
+        val index = webLinks.indexOfFirst { it.id == linkId }
+        if (index < 0) return
+
+        val permissionKey = webLinks[index].permissionKey
+        webLinks.removeAt(index)
+        KioskWebLinkStore.persist(this, webLinks)
+
+        var usersChanged = false
+        userProfiles = userProfiles.map { user ->
+            if (permissionKey in user.allowedPackages) {
+                usersChanged = true
+                user.copy(allowedPackages = user.allowedPackages - permissionKey)
+            } else {
+                user
+            }
+        }.toMutableList()
+
+        if (usersChanged) {
+            KioskUserStore.persist(this, userProfiles)
+        }
+
+        Toast.makeText(this, R.string.admin_web_link_deleted, Toast.LENGTH_SHORT).show()
+        refreshState()
     }
 
     private fun addWebLinkFromAdminInputs() {
@@ -690,17 +757,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun maybeExitLockTaskForAdmin() {
-        if (sessionState != SessionState.ADMIN) return
-        if (!isInLockTaskMode()) return
-
-        try {
-            stopLockTask()
-        } catch (_: IllegalStateException) {
-            // No-op: lock task puede no estar iniciado por esta actividad.
-        }
-    }
-
     private fun exitKioskCompletely() {
         try {
             if (isInLockTaskMode()) {
@@ -844,16 +900,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (item.launchUrl != null) {
-            val browseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(item.launchUrl)).apply {
-                addCategory(Intent.CATEGORY_BROWSABLE)
+            val webIntent = Intent(this, KioskWebActivity::class.java).apply {
+                putExtra(KioskWebActivity.EXTRA_LINK_ID, item.id)
+                putExtra(KioskWebActivity.EXTRA_LINK_LABEL, item.label)
+                putExtra(KioskWebActivity.EXTRA_LINK_URL, item.launchUrl)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            try {
-                startActivity(browseIntent)
-            } catch (_: ActivityNotFoundException) {
-                Toast.makeText(this, R.string.web_link_open_failed, Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                Toast.makeText(this, R.string.web_link_open_failed, Toast.LENGTH_SHORT).show()
-            }
+            startActivity(webIntent)
             return
         }
 
@@ -862,7 +915,28 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.app_not_installed, Toast.LENGTH_SHORT).show()
             return
         }
+
+        if (sessionState == SessionState.USER && bringRunningTaskToFront(item.packageName)) {
+            return
+        }
+
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(launchIntent)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun bringRunningTaskToFront(targetPackage: String): Boolean {
+        return runCatching {
+            val am = getSystemService(ActivityManager::class.java)
+            val task = am.getRunningTasks(50).firstOrNull { info ->
+                info.topActivity?.packageName == targetPackage ||
+                    info.baseActivity?.packageName == targetPackage
+            } ?: return false
+            am.moveTaskToFront(task.id, 0)
+            true
+        }.getOrElse {
+            false
+        }
     }
 
     private fun calculateSpanCount(): Int {

@@ -70,7 +70,8 @@ class KioskPolicyController(private val context: Context) {
                         DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO or
                         DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS
                 } else {
-                    DevicePolicyManager.LOCK_TASK_FEATURE_NONE
+                    // Keep only HOME enabled so users can return to kiosk without closing foreground apps.
+                    DevicePolicyManager.LOCK_TASK_FEATURE_HOME
                 }
                 dpm.setLockTaskFeatures(admin, features)
             }

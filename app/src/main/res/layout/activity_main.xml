@@ -650,19 +650,11 @@
                 android:padding="8dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/adminOpenLauncherButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/admin_open_launcher"
-                android:textAllCaps="false" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/adminLogoutButton"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/admin_logout"
                 android:textAllCaps="false" />
 

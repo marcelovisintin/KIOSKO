@@ -14,10 +14,13 @@ captures/
 .idea/workspace.xml
 .idea/navEditor.xml
 .idea/assetWizardSettings.xml
+.vscode/
 *.iml
 
 # Local machine config
 local.properties
+.android-user-home/
+.gradle-user-home/
 
 # Signing / artifacts
 *.jks

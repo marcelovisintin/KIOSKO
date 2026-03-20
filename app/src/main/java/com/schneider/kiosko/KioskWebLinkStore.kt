@@ -9,8 +9,7 @@ object KioskWebLinkStore {
 
     private const val PREFS_NAME = "kiosk_web_link_store"
     private const val KEY_WEB_LINKS_JSON = "web_links_json"
-    private const val DEFAULT_WEB_LINK_NAME = "Odoo Schneider"
-    private const val DEFAULT_WEB_LINK_URL = "https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F"
+    private const val LEGACY_DEFAULT_WEB_LINK_URL = "https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F"
 
     fun load(context: Context): MutableList<KioskWebLink> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -37,19 +36,15 @@ object KioskWebLinkStore {
                 }
             }
         }
-        val hasDefaultUrl = links.any { it.url.equals(DEFAULT_WEB_LINK_URL, ignoreCase = true) }
-        if (!hasDefaultUrl) {
-            links.add(
-                KioskWebLink(
-                    id = UUID.randomUUID().toString(),
-                    name = DEFAULT_WEB_LINK_NAME,
-                    url = DEFAULT_WEB_LINK_URL,
-                ),
-            )
-            persist(context, links)
+        val cleanedLinks = links
+            .filterNot { it.url.equals(LEGACY_DEFAULT_WEB_LINK_URL, ignoreCase = true) }
+            .toMutableList()
+
+        if (cleanedLinks.size != links.size) {
+            persist(context, cleanedLinks)
         }
 
-        return links
+        return cleanedLinks
     }
 
     fun persist(context: Context, links: List<KioskWebLink>) {

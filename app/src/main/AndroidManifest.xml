@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
     <uses-feature
         android:name="android.software.device_admin"
         android:required="true" />
@@ -31,6 +33,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".KioskWebActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:lockTaskMode="if_whitelisted"
+            android:taskAffinity="${applicationId}.web"
+            android:screenOrientation="portrait" />
 
         <receiver
             android:name=".KioskDeviceAdminReceiver"

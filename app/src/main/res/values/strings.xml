@@ -42,11 +42,13 @@
     <string name="admin_web_name_hint">Nombre del acceso web</string>
     <string name="admin_web_url_hint">URL (https://...)</string>
     <string name="admin_add_web_link">Agregar URL</string>
+    <string name="admin_delete_web_link">Eliminar URL</string>
     <string name="admin_no_web_links">No hay URLs configuradas.</string>
     <string name="admin_select_user_for_web_links">Selecciona un usuario para asignar URLs.</string>
     <string name="admin_web_link_invalid">Ingresa nombre y URL valida (http/https).</string>
     <string name="admin_web_link_exists">Esa URL ya fue cargada.</string>
     <string name="admin_web_link_added">URL agregada.</string>
+    <string name="admin_web_link_deleted">URL eliminada.</string>
     <string name="admin_no_users">No hay usuarios configurados.</string>
     <string name="admin_no_assignable_apps">No hay apps para asignar.</string>
     <string name="admin_user_added">Usuario creado.</string>

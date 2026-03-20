@@ -33,7 +33,10 @@ class AllowedAppsAdapter(
         private val binding: ItemAllowedAppBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: AllowedApp, onOpenClicked: (AllowedApp) -> Unit) {
+        fun bind(
+            item: AllowedApp,
+            onOpenClicked: (AllowedApp) -> Unit,
+        ) {
             binding.appIconImageView.setImageDrawable(item.icon)
             binding.appLabelTextView.text = item.label
             binding.appPackageTextView.text = item.packageName
