@@ -5,7 +5,6 @@
     <string name="status_device_owner_missing">La app no es device owner. Ejecuta el enrolamiento por ADB/EMM.</string>
     <string name="status_lock_task_active">Lock task activo.</string>
     <string name="status_lock_task_inactive">Lock task inactivo.</string>
-    <string name="apply_policies">Aplicar</string>
     <string name="kiosk_header_title">Dispositivo kiosko</string>
     <string name="kiosk_header_subtitle">Entorno protegido</string>
     <string name="kiosk_header_meta">%1$s - %2$s</string>

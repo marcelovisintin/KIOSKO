@@ -83,7 +83,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configureInteractions() {
-        binding.applyPoliciesButton.setOnClickListener { refreshState(forcePolicyApply = true) }
         binding.userSwitchAccountButton.setOnClickListener {
             currentUserId = null
             sessionState = if (config.pinRequired) SessionState.LOCKED else SessionState.USER
