@@ -377,6 +377,8 @@
         android:id="@+id/adminContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
         android:padding="18dp"
         android:visibility="gone">
 

@@ -57,6 +57,8 @@
     <string name="admin_user_label">%1$s (PIN %2$s)</string>
     <string name="launcher_user_header">Hola, %1$s</string>
     <string name="web_link_open_failed">No se pudo abrir la URL configurada.</string>
+    <string name="kiosk_web_home">Kiosko</string>
+    <string name="kiosk_web_close">Cerrar</string>
     <string name="default_user_pin">1234</string>
     <string name="default_admin_pin">2026</string>
     <string name="mc_desc_allowed_packages">Lista de paquetes permitidos separados por coma.</string>

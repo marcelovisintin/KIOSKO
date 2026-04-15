@@ -2,7 +2,6 @@ package com.schneider.kiosko
 
 import android.animation.ObjectAnimator
 import android.app.ActivityManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -16,11 +15,15 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.schneider.kiosko.databinding.ActivityMainBinding
 import java.util.UUID
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
 
@@ -59,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        configureInsetsSafeAreas()
 
         policyController = KioskPolicyController(this)
         adapter = AllowedAppsAdapter(::openAllowedApp)
@@ -69,6 +73,25 @@ class MainActivity : AppCompatActivity() {
         configureInteractions()
         renderSession()
         updatePinDots(isError = false)
+    }
+
+    private fun configureInsetsSafeAreas() {
+        val pinBaseBottom = binding.pinLoginContainer.paddingBottom
+        val launcherBaseBottom = binding.launcherContainer.paddingBottom
+        val adminBaseBottom = binding.adminContainer.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val navBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val bottomInset = max(navBars.bottom, ime.bottom)
+
+            binding.pinLoginContainer.updatePadding(bottom = pinBaseBottom + bottomInset + dp(8))
+            binding.launcherContainer.updatePadding(bottom = launcherBaseBottom + bottomInset + dp(8))
+            binding.adminContainer.updatePadding(bottom = adminBaseBottom + bottomInset + dp(24))
+            insets
+        }
+
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     override fun onResume() {
@@ -773,13 +796,36 @@ class MainActivity : AppCompatActivity() {
             .asSequence()
             .filter { it != packageName && !KioskWebLink.isPermissionKey(it) }
             .mapNotNull { pkg ->
-                val resolveInfo = byPackage[pkg] ?: return@mapNotNull null
-                val label = resolveInfo.loadLabel(packageManager).toString().ifBlank { pkg }
-                val icon = resolveInfo.loadIcon(packageManager)
+                val resolveInfo = byPackage[pkg]
+                if (resolveInfo != null) {
+                    val label = resolveInfo.loadLabel(packageManager).toString().ifBlank { pkg }
+                    val icon = resolveInfo.loadIcon(packageManager)
+                    return@mapNotNull AllowedApp(
+                        id = pkg,
+                        label = label,
+                        packageName = pkg,
+                        icon = icon,
+                    )
+                }
+
+                // Fallback for OEMs that hide some launchables from launcher queries in kiosk mode.
+                val launchIntent = packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
+                @Suppress("DEPRECATION")
+                val appInfo = runCatching {
+                    packageManager.getApplicationInfo(pkg, PackageManager.MATCH_ALL)
+                }.getOrNull()
+                val label = appInfo
+                    ?.let { packageManager.getApplicationLabel(it).toString() }
+                    ?.ifBlank { pkg }
+                    ?: pkg
+                val icon = runCatching {
+                    appInfo?.let { packageManager.getApplicationIcon(it) }
+                        ?: packageManager.defaultActivityIcon
+                }.getOrDefault(packageManager.defaultActivityIcon)
                 AllowedApp(
                     id = pkg,
                     label = label,
-                    packageName = pkg,
+                    packageName = launchIntent.`package` ?: pkg,
                     icon = icon,
                 )
             }
@@ -844,16 +890,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (item.launchUrl != null) {
-            val browseIntent = Intent(Intent.ACTION_VIEW, Uri.parse(item.launchUrl)).apply {
-                addCategory(Intent.CATEGORY_BROWSABLE)
+            val webIntent = Intent(this, KioskWebActivity::class.java).apply {
+                putExtra(KioskWebActivity.EXTRA_LINK_ID, item.id)
+                putExtra(KioskWebActivity.EXTRA_LINK_LABEL, item.label)
+                putExtra(KioskWebActivity.EXTRA_LINK_URL, item.launchUrl)
+                // Keep one document task per web-link to preserve session state.
+                data = Uri.parse("kiosk://web/${Uri.encode(item.id)}")
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT,
+                )
             }
-            try {
-                startActivity(browseIntent)
-            } catch (_: ActivityNotFoundException) {
-                Toast.makeText(this, R.string.web_link_open_failed, Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                Toast.makeText(this, R.string.web_link_open_failed, Toast.LENGTH_SHORT).show()
-            }
+            startActivity(webIntent)
             return
         }
 
@@ -877,3 +925,4 @@ class MainActivity : AppCompatActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
+
