@@ -1,26 +1,31 @@
 # Kiosko Android (Dedicated Device)
 
-App Android de tipo kiosco para tablets empresariales. Implementa:
+App Android de tipo kiosko para tablets empresariales.
 
-- `Device owner` (DPC minimo en la misma app).
-- `Lock task mode` para bloquear salida del entorno.
-- Allowlist de paquetes permitidos.
-- Bloqueo de overlays con `DISALLOW_CREATE_WINDOWS`.
-- Arranque automatico despues de reinicio.
-- Configuracion remota por `Managed Configurations (AppConfig)`.
-- Login por `usuario + PIN` con sesion `USER` y sesion `ADMIN`.
-- Panel admin local para soporte y diagnostico.
-- Gestion local de usuarios con PIN y asignacion de apps por usuario.
-- Gestion de accesos web (URL) con nombre visible y asignacion por usuario.
-- En sesion `USER`, el encabezado muestra el nombre del usuario autenticado.
+## Version actual
+
+- `versionCode`: `2`
+- `versionName`: `1.0.1-produccion-siempre-andando`
+- Fecha de release: `2026-04-15`
+
+## Que incluye esta version
+
+- Lock task con `device owner` y launcher HOME persistente.
+- Login con `usuario + PIN` para sesion `USER` y `ADMIN`.
+- Panel admin local para gestion de usuarios, permisos y accesos web.
+- Accesos web dentro de `KioskWebActivity` (WebView interno).
+- Modo inmersivo en launcher y WebView.
+- Ajuste de insets en panel admin para que `Salir de kiosko` quede tocable aun con barra de navegacion visible.
+- Fallback para OEMs que ocultan apps launchables en queries de launcher (caso Xiaomi/MIUI).
 
 ## Arquitectura
 
-- `MainActivity`: login, launcher kiosco, panel admin y permisos por usuario.
+- `MainActivity`: login, launcher kiosko, panel admin, insets seguros para controles inferiores.
+- `KioskWebActivity`: contenedor web interno, navegacion de retorno a HOME kiosko y controles locales.
 - `KioskDeviceAdminReceiver`: receiver de administracion del dispositivo.
 - `KioskPolicyController`: aplica lock task y hardening.
 - `KioskConfigProvider`: lee allowlist desde AppConfig y defaults locales.
-- `BootCompletedReceiver`: relanza kiosco al reiniciar.
+- `BootCompletedReceiver`: relanza kiosko tras reinicio.
 - `KioskUserStore`: persistencia local de usuarios y permisos.
 - `KioskWebLinkStore`: persistencia local de accesos web.
 
@@ -30,7 +35,7 @@ La lista de paquetes permitidos se combina desde:
 
 1. `app/src/main/res/values/arrays.xml` (`default_allowed_packages`)
 2. Managed config `allowed_packages_csv` (separado por comas)
-3. El propio paquete de la app kiosco (se agrega siempre)
+3. El propio paquete de la app kiosko (se agrega siempre)
 
 ## Provision rapida por ADB (piloto/lab)
 
@@ -50,6 +55,8 @@ adb shell dpm set-device-owner com.schneider.kiosko/.KioskDeviceAdminReceiver
 
 5. Abrir la app `Kiosko`.
 
+Nota Xiaomi/MIUI: si aparece `INSTALL_FAILED_USER_RESTRICTED`, la instalacion por ADB fue bloqueada por politica del dispositivo y se debe instalar manualmente desde la tablet.
+
 ## Build
 
 Proyecto Android con Kotlin + ViewBinding.
@@ -58,11 +65,12 @@ Proyecto Android con Kotlin + ViewBinding.
 - `targetSdk`: 35
 
 Compilar desde Android Studio (recomendado).
-Si deseas compilar por CLI, primero genera wrapper y luego arma el APK:
+Tambien se puede compilar por CLI:
 
 ```bash
-gradle wrapper
 ./gradlew assembleDebug
+# Windows PowerShell / CMD
+.\gradlew.bat assembleDebug
 ```
 
 ## Managed Configurations (EMM)
@@ -113,9 +121,7 @@ Desde sesion `ADMIN` puedes:
 - Ver las URLs cargadas debajo del boton `Agregar URL`.
 - Asignar/desasignar cada URL al usuario seleccionado en el spinner.
 
-La app valida URLs `http/https` y agrega una URL de ejemplo por defecto:
-
-- `Odoo Schneider` -> `https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F`
+La app valida URLs `http/https`.
 
 ## Notas operativas
 
@@ -123,10 +129,9 @@ La app valida URLs `http/https` y agrega una URL de ejemplo por defecto:
 - `Lock task` solo es fuerte cuando el paquete esta allowlisteado por DPC.
 - Para produccion se recomienda enrolamiento Android Enterprise (zero-touch o QR) con EMM.
 
-## Notas config tablet
+## Notas de configuracion de tablet
 
--en sistema-avanzado-informacion tablet-numero de compilacion " picar 7 veces para entrar en modo opciones para desarrollador"
-
--en opciones desarrollador- activar depuracion USB
--en opciones desarrollador- configuracion de USB predeterminada- activar trasnferencia de archivos.
--tablet conectada por cable a pc. ir en pc a administrador de dispositivos eliminar la tablet y luego en la pestaña accion buscar cambios en hardware.
+- En `Sistema > Avanzado > Informacion de la tablet > Numero de compilacion`, tocar 7 veces para habilitar opciones de desarrollador.
+- En `Opciones de desarrollador`, activar `Depuracion USB`.
+- En `Opciones de desarrollador`, configurar `USB predeterminado` en `Transferencia de archivos`.
+- Si la tablet no aparece bien en la PC, quitarla en `Administrador de dispositivos` y ejecutar `Buscar cambios de hardware`.
