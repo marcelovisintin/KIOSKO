@@ -9,8 +9,22 @@ object KioskWebLinkStore {
 
     private const val PREFS_NAME = "kiosk_web_link_store"
     private const val KEY_WEB_LINKS_JSON = "web_links_json"
-    private const val DEFAULT_WEB_LINK_NAME = "Odoo Schneider"
-    private const val DEFAULT_WEB_LINK_URL = "https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F"
+
+    private data class DefaultWebLink(
+        val name: String,
+        val url: String,
+    )
+
+    private val DEFAULT_WEB_LINKS = listOf(
+        DefaultWebLink(
+            name = "Odoo Schneider",
+            url = "https://schneider-srl.odoo.com/web/login?redirect=%2Fodoo%3F",
+        ),
+        DefaultWebLink(
+            name = "Parte diario produccion",
+            url = "https://script.google.com/macros/s/AKfycbxvlVMdxC8apqve0VIOv_tye63_H5xufDVbyUdo3TrJRwjwncW2rnCSKFHhEVK8SV1UCg/exec",
+        ),
+    )
 
     fun load(context: Context): MutableList<KioskWebLink> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -37,15 +51,23 @@ object KioskWebLinkStore {
                 }
             }
         }
-        val hasDefaultUrl = links.any { it.url.equals(DEFAULT_WEB_LINK_URL, ignoreCase = true) }
-        if (!hasDefaultUrl) {
-            links.add(
-                KioskWebLink(
-                    id = UUID.randomUUID().toString(),
-                    name = DEFAULT_WEB_LINK_NAME,
-                    url = DEFAULT_WEB_LINK_URL,
-                ),
-            )
+        var defaultsAdded = false
+        DEFAULT_WEB_LINKS.forEach { defaultLink ->
+            val normalizedUrl = KioskWebLink.normalizeUrl(defaultLink.url) ?: return@forEach
+            val exists = links.any { it.url.equals(normalizedUrl, ignoreCase = true) }
+            if (!exists) {
+                links.add(
+                    KioskWebLink(
+                        id = UUID.randomUUID().toString(),
+                        name = defaultLink.name,
+                        url = normalizedUrl,
+                    ),
+                )
+                defaultsAdded = true
+            }
+        }
+
+        if (defaultsAdded) {
             persist(context, links)
         }
 
